@@ -3,6 +3,10 @@ import { type NextRequest, NextResponse } from "next/server"
 function getHeliusApiKey(): string {
   const heliusKey = process.env.HELIUS_API_KEY || ""
 
+  if (!heliusKey) {
+    throw new Error("HELIUS_API_KEY environment variable is not configured")
+  }
+
   // If the env var contains a full URL, extract the API key
   if (heliusKey.includes("api-key=")) {
     const match = heliusKey.match(/api-key=([^&\s]+)/)
@@ -15,15 +19,11 @@ function getHeliusApiKey(): string {
 function getAlchemyApiKey(): string {
   const envKey = process.env.ALCHEMY_API_KEY
 
-  // If environment variable is set and not the old broken key, use it
-  if (envKey && envKey !== "okmLMo92Dd3BSljdeC78P") {
-    return envKey
+  if (!envKey) {
+    throw new Error("ALCHEMY_API_KEY environment variable is not configured. Please add it in the Vars section.")
   }
 
-  // Fallback to the working API key that has ETH_MAINNET enabled
-  // TODO: Update ALCHEMY_API_KEY environment variable to: CgS5Hdt0EEKr5K2JK0lfw
-  console.log("[v0] Using fallback Alchemy API key (environment variable not set or using old key)")
-  return "CgS5Hdt0EEKr5K2JK0lfw"
+  return envKey
 }
 
 async function alchemyRequest(apiKey: string, method: string, params: any[], network = "eth-mainnet") {
@@ -91,7 +91,9 @@ async function alchemyRequestWithFallback(apiKey: string, method: string, params
     }
   }
 
-  throw new Error(`Unable to connect to Alchemy. All networks failed. Last error: ${lastError?.message}`)
+  throw new Error(
+    `Unable to connect to Alchemy. Please enable ETH_MAINNET or ETH_SEPOLIA in your Alchemy dashboard: https://dashboard.alchemy.com/apps`,
+  )
 }
 
 export async function GET(request: NextRequest, { params }: { params: { address: string } }) {
@@ -107,11 +109,6 @@ export async function GET(request: NextRequest, { params }: { params: { address:
     if (isSolana) {
       console.log("[v0] Detected Solana address")
       const heliusKey = getHeliusApiKey()
-
-      if (!heliusKey) {
-        console.error("[v0] HELIUS_API_KEY not found in environment variables")
-        return NextResponse.json({ error: "Helius API key not configured" }, { status: 500 })
-      }
 
       console.log("[v0] Using Helius API key:", heliusKey.substring(0, 8) + "...")
 

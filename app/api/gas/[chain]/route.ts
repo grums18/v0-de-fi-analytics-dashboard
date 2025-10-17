@@ -6,7 +6,12 @@ export async function GET(request: NextRequest, { params }: { params: { chain: s
     console.log("[v0] Fetching gas prices for chain:", chain)
 
     if (chain === "ethereum") {
-      const alchemyApiKey = process.env.ALCHEMY_API_KEY || "CgS5Hdt0EEKr5K2JK0lfw"
+      const alchemyApiKey = process.env.ALCHEMY_API_KEY
+
+      if (!alchemyApiKey) {
+        throw new Error("ALCHEMY_API_KEY environment variable is not configured. Please add it in the Vars section.")
+      }
+
       const alchemyUrl = `https://eth-mainnet.g.alchemy.com/v2/${alchemyApiKey}`
 
       // Fetch current gas price using eth_gasPrice
